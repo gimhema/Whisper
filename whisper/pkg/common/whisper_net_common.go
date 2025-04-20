@@ -1,9 +1,8 @@
-package main
+package common
 
 import (
 	"fmt"
 	"net"
-	"os"
 	"syscall"
 )
 
