@@ -7,9 +7,15 @@ import (
 )
 
 type TCPServer struct {
-	Address string
-	listener net.Listener
+	Address      string
+	listener     net.Listener
+	messageHandler func(conn net.Conn, data []byte)
 }
+
+func (s *TCPServer) SetMessageHandler(handler func(conn net.Conn, data []byte)) {
+	s.messageHandler = handler
+}
+
 
 func NewTCPServer(address string) *TCPServer {
 	return &TCPServer{
@@ -41,7 +47,6 @@ func (s *TCPServer) Run() error {
 func (s *TCPServer) handleConnection(conn net.Conn) {
 	defer conn.Close()
 
-	// syscall-level으로 non-blocking 설정
 	rawConn, err := conn.(*net.TCPConn).File()
 	if err != nil {
 		fmt.Println("Failed to get raw connection:", err)
@@ -49,17 +54,12 @@ func (s *TCPServer) handleConnection(conn net.Conn) {
 	}
 	defer rawConn.Close()
 
-	// Set the file descriptor to non-blocking
-	if err := syscall.SetNonblock(int(rawConn.Fd()), true); err != nil {
-		fmt.Println("Failed to set non-blocking mode:", err)
-		return
-	}
+	syscall.SetNonblock(int(rawConn.Fd()), true)
 
 	buf := make([]byte, 1024)
 	for {
 		n, err := conn.Read(buf)
 		if err != nil {
-			// non-blocking이므로 일시적 에러는 무시
 			if isTemporary(err) {
 				continue
 			}
@@ -68,11 +68,13 @@ func (s *TCPServer) handleConnection(conn net.Conn) {
 		}
 		if n > 0 {
 			data := buf[:n]
-			fmt.Printf("Received: %s\n", string(data))
-			conn.Write(data) // 에코
+			if s.messageHandler != nil {
+				s.messageHandler(conn, data)
+			}
 		}
 	}
 }
+
 
 func isTemporary(err error) bool {
 	if nerr, ok := err.(net.Error); ok && nerr.Temporary() {
@@ -81,10 +83,4 @@ func isTemporary(err error) bool {
 	return false
 }
 
-// func main() {
-// 	server := NewTCPServer(":9000")
-// 	if err := server.Run(); err != nil {
-// 		fmt.Println("Server error:", err)
-// 		os.Exit(1)
-// 	}
-// }
+
