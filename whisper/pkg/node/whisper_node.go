@@ -3,6 +3,7 @@ package node
 import (
 	"fmt"
 	"whisper/pkg/common"
+	"os"
 )
 
 type Node struct {
@@ -18,4 +19,9 @@ func CreateNode() *Node {
 
 func (broker *Node) Run() {
 	fmt.Println("Run Message Node")
+
+	if err := broker.tcpConn.Run(); err != nil {
+		fmt.Println("Server error:", err)
+		os.Exit(1)
+	}
 }
