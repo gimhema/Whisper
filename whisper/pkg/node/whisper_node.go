@@ -17,10 +17,10 @@ func CreateNode() *Node {
 	}
 }
 
-func (broker *Node) Run() {
+func (node *Node) Run() {
 	fmt.Println("Run Message Node")
 
-	if err := broker.tcpConn.Run(); err != nil {
+	if err := node.tcpConn.Run(); err != nil {
 		fmt.Println("Server error:", err)
 		os.Exit(1)
 	}

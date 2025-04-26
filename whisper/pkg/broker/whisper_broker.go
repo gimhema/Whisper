@@ -3,6 +3,7 @@ package broker
 import (
 	"fmt"
 	"whisper/pkg/common"
+	"os"
 )
 
 type Broker struct {
@@ -18,4 +19,9 @@ func CreateBroker() *Broker {
 
 func (broker *Broker) Run() {
 	fmt.Println("Run Message Broker")
+
+	if err := broker.tcpConn.Run(); err != nil {
+		fmt.Println("Server error:", err)
+		os.Exit(1)
+	}
 }
