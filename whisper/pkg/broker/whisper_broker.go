@@ -5,10 +5,18 @@ import (
 	"whisper/pkg/common"
 	"os"
 	"net"
+	"strings"
 )
+
+type Subscriber struct {
+	conn net.Conn
+	id   string
+}
 
 type Broker struct {
 	tcpConn common.TCPServer
+	subscriptions map[string]map[string]*Subscriber
+	subscribers map[string]*Subscriber
 }
 
 func CreateBroker() *Broker {
@@ -30,10 +38,50 @@ func (broker *Broker) Run() {
 }
 
 func (broker *Broker) handleMessage(conn net.Conn, data []byte) {
-	// 예: 메시지를 처리하거나 라우팅
 	msg := string(data)
-	fmt.Printf("Broker received: %s\n", msg)
+	parts := strings.SplitN(msg, " ", 3)
 
-	// 예: 클라이언트에 응답 보내기
-	conn.Write([]byte("ACK: " + msg))
+	if len(parts) < 2 {
+		conn.Write([]byte("ERR invalid message format\n"))
+		return
+	}
+
+	cmd := parts[0]
+	topic := parts[1]
+
+	switch cmd {
+	case "SUB":
+		broker.subscribe(conn, topic)
+	case "PUB":
+		if len(parts) < 3 {
+			conn.Write([]byte("ERR missing message\n"))
+			return
+		}
+		message := parts[2]
+		broker.publish(topic, message)
+	default:
+		conn.Write([]byte("ERR unknown command\n"))
+	}
+}
+
+func (broker *Broker) subscribe(conn net.Conn, topic string) {
+	id := conn.RemoteAddr().String()
+	sub := &Subscriber{conn: conn, id: id}
+
+	// 등록
+	if broker.subscriptions[topic] == nil {
+		broker.subscriptions[topic] = make(map[string]*Subscriber)
+	}
+	broker.subscriptions[topic][id] = sub
+	broker.subscribers[id] = sub
+
+	conn.Write([]byte("SUBSCRIBED to " + topic + "\n"))
+}
+
+func (broker *Broker) publish(topic, message string) {
+	if subs, ok := broker.subscriptions[topic]; ok {
+		for _, sub := range subs {
+			sub.conn.Write([]byte("MSG " + topic + " " + message + "\n"))
+		}
+	}
 }
