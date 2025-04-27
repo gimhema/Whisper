@@ -3,6 +3,8 @@ package common
 import (
 	"fmt"
 	"net"
+	"bufio"
+	"strings"
 )
 
 type TCPServer struct {
@@ -44,19 +46,19 @@ func (s *TCPServer) Run() error {
 }
 
 func (s *TCPServer) handleConnection(conn net.Conn) {
-	buf := make([]byte, 1024)
+	reader := bufio.NewReader(conn)
 	for {
-		n, err := conn.Read(buf)
+		line, err := reader.ReadString('\n') // 한 줄 읽기
 		if err != nil {
 			if isTemporary(err) {
 				continue
 			}
 			fmt.Println("Read error:", err)
-			conn.Close()  // 여기서 에러 났을 때 닫기
+			conn.Close()
 			return
 		}
-		if n > 0 {
-			data := buf[:n]
+		if len(line) > 0 {
+			data := []byte(strings.TrimSpace(line)) // 줄바꿈 제거
 			if s.messageHandler != nil {
 				s.messageHandler(conn, data)
 			}
