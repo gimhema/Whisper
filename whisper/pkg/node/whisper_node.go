@@ -1,8 +1,11 @@
 package node
 
 import (
+	"bufio"
 	"fmt"
 	"net"
+	"os"
+	"strings"
 )
 
 type Node struct {
@@ -37,14 +40,13 @@ func (n *Node) RegisterHandler(topic string, handler func(string)) {
 	n.subscribers[topic] = handler
 }
 
-// func handleNews(msg string) {
-// 	fmt.Println("[news] Received:", msg)
-// }
+func handleChat (msg string) {
+	fmt.Println("[Chat] Received:", msg)
+}
 
 func (n *Node) SetupHandler() {
 
-	// node.RegisterHandler("news", handleNews)
-	// node.RegisterHandler("sports", handleSports)
+	n.RegisterHandler("chat", handleChat)
 }
 
 // 메세지 송신
@@ -54,7 +56,46 @@ func (n *Node) Publish(topic string, message string) error {
 	return err
 }
 
-// 메세지 수신 및 처리
+func (n *Node) HandleUserInput() {
+	scanner := bufio.NewScanner(os.Stdin)
+	fmt.Println("Type commands: (e.g., 'SUB topic', 'PUB topic message')")
+	for scanner.Scan() {
+		input := scanner.Text()
+		parts := strings.SplitN(input, " ", 3) // 최대 3개로 분할
+		if len(parts) < 2 {
+			fmt.Println("Invalid command. Usage: SUB <topic> | PUB <topic> <message>")
+			continue
+		}
+		command := strings.ToUpper(parts[0])
+		topic := parts[1]
+
+		switch command {
+		case "SUB":
+			err := n.Subscribe(topic)
+			if err != nil {
+				fmt.Println("Subscribe error:", err)
+			} else {
+				fmt.Println("Subscribed to topic:", topic)
+			}
+		case "PUB":
+			if len(parts) < 3 {
+				fmt.Println("Publish needs a topic and a message. Usage: PUB <topic> <message>")
+				continue
+			}
+			message := parts[2]
+			err := n.Publish(topic, message)
+			if err != nil {
+				fmt.Println("Publish error:", err)
+			}
+		default:
+			fmt.Println("Unknown command:", command)
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		fmt.Println("Input error:", err)
+	}
+}
+
 func (n *Node) Listen() {
 	buf := make([]byte, 1024)
 	for {

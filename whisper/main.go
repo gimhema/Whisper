@@ -39,6 +39,8 @@ func main() {
 
 			go node.Listen()
 
+			node.HandleUserInput()
+
 			select {} 
 
 		} else {
