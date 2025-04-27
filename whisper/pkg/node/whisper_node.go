@@ -6,41 +6,45 @@ import (
 )
 
 type Node struct {
-	conn net.Conn
-	id   string
-	subscribers map[string]func(string)
+	conn        net.Conn
+	id          string
+	subscribers map[string]func(string) // 토픽별 메세지 핸들러
 }
 
-
+// 브로커에 연결
 func ConnectToBroker(address string) (*Node, error) {
 	conn, err := net.Dial("tcp", address)
 	if err != nil {
 		return nil, err
 	}
 	node := &Node{
-		conn: conn,
-		id:   conn.LocalAddr().String(),
+		conn:        conn,
+		id:          conn.LocalAddr().String(),
+		subscribers: make(map[string]func(string)),
 	}
 	return node, nil
 }
 
+// 서버에 구독 요청
+func (n *Node) Subscribe(topic string) error {
+	payload := fmt.Sprintf("SUB %s\n", topic)
+	_, err := n.conn.Write([]byte(payload))
+	return err
+}
+
+// 토픽별 콜백 등록
+func (n *Node) RegisterHandler(topic string, handler func(string)) {
+	n.subscribers[topic] = handler
+}
+
+// 메세지 송신
 func (n *Node) Publish(topic string, message string) error {
 	payload := fmt.Sprintf("PUB %s %s\n", topic, message)
 	_, err := n.conn.Write([]byte(payload))
 	return err
 }
 
-func (n *Node) Subscribe(topic string, handler func(string)) error {
-	if n.subscribers == nil {
-		n.subscribers = make(map[string]func(string))
-	}
-	n.subscribers[topic] = handler
-
-	payload := fmt.Sprintf("SUB %s\n", topic)
-	_, err := n.conn.Write([]byte(payload))
-	return err
-}
-
+// 메세지 수신 및 처리
 func (n *Node) Listen() {
 	buf := make([]byte, 1024)
 	for {
@@ -59,12 +63,13 @@ func (n *Node) Listen() {
 				if handler, ok := n.subscribers[topic]; ok {
 					handler(body)
 				} else {
-					fmt.Println("No handler for topic:", topic)
+					fmt.Println("No handler registered for topic:", topic)
 				}
 			}
 		}
 	}
 }
+
 
 /*
 func main() {
