@@ -22,9 +22,12 @@ type Broker struct {
 func CreateBroker() *Broker {
 	_tcpConn := common.NewTCPServer(":8080")
 	return &Broker{
-		tcpConn: *_tcpConn,
+		tcpConn:       *_tcpConn,
+		subscriptions: make(map[string]map[string]*Subscriber),
+		subscribers:   make(map[string]*Subscriber),
 	}
 }
+
 
 func (broker *Broker) Run() {
 	fmt.Println("Run Message Broker")
@@ -79,9 +82,13 @@ func (broker *Broker) subscribe(conn net.Conn, topic string) {
 }
 
 func (broker *Broker) publish(topic, message string) {
-	if subs, ok := broker.subscriptions[topic]; ok {
-		for _, sub := range subs {
-			sub.conn.Write([]byte("MSG " + topic + " " + message + "\n"))
-		}
+	subs, ok := broker.subscriptions[topic]
+	if !ok || len(subs) == 0 {
+		fmt.Println("No subscribers for topic:", topic)
+		return
+	}
+	for _, sub := range subs {
+		sub.conn.Write([]byte("MSG " + topic + " " + message + "\n"))
 	}
 }
+
