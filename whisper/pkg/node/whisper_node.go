@@ -37,6 +37,16 @@ func (n *Node) RegisterHandler(topic string, handler func(string)) {
 	n.subscribers[topic] = handler
 }
 
+// func handleNews(msg string) {
+// 	fmt.Println("[news] Received:", msg)
+// }
+
+func (n *Node) SetupHandler() {
+
+	// node.RegisterHandler("news", handleNews)
+	// node.RegisterHandler("sports", handleSports)
+}
+
 // 메세지 송신
 func (n *Node) Publish(topic string, message string) error {
 	payload := fmt.Sprintf("PUB %s %s\n", topic, message)
@@ -78,13 +88,26 @@ func main() {
 		panic(err)
 	}
 
-	go node.Listen() // 메시지 수신 비동기 처리
+	// 토픽별 콜백 함수 등록
+	node.RegisterHandler("news", func(msg string) {
+		fmt.Println("[news] Received:", msg)
+	})
 
+	node.RegisterHandler("sports", func(msg string) {
+		fmt.Println("[sports] Received:", msg)
+	})
+
+	// 브로커에 구독 요청
 	node.Subscribe("news")
-	time.Sleep(time.Second)
-	node.Publish("news", "hello from node")
+	node.Subscribe("sports")
 
-	select {} // main 종료 방지
+	go node.Listen()
+
+	node.Publish("news", "Hello from node!")
+	node.Publish("sports", "Soccer match at 8PM")
+
+	select {} // 프로그램 종료 방지
 }
+
 
 */

@@ -35,6 +35,8 @@ func main() {
 				panic(err)
 			}
 
+			node.SetupHandler()
+
 			go node.Listen()
 
 			select {} 
