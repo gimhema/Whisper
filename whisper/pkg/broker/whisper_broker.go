@@ -44,6 +44,8 @@ func (broker *Broker) handleMessage(conn net.Conn, data []byte) {
 	msg := string(data)
 	parts := strings.SplitN(msg, " ", 3)
 
+	fmt.Println("Received Raw Message:", msg)
+
 	if len(parts) < 2 {
 		conn.Write([]byte("ERR invalid message format\n"))
 		return
@@ -82,13 +84,20 @@ func (broker *Broker) subscribe(conn net.Conn, topic string) {
 }
 
 func (broker *Broker) publish(topic, message string) {
+
+	fmt.Println("publish topic : ", topic)
+
 	subs, ok := broker.subscriptions[topic]
 	if !ok || len(subs) == 0 {
 		fmt.Println("No subscribers for topic:", topic)
 		return
 	}
-	for _, sub := range subs {
-		sub.conn.Write([]byte("MSG " + topic + " " + message + "\n"))
+	for id, sub := range subs {
+		_, err := sub.conn.Write([]byte("MSG " + topic + " " + message + "\n"))
+		if err != nil {
+			fmt.Println("Failed to send to subscriber:", id, "error:", err)
+			delete(subs, id) 
+		}
 	}
-}
+	}
 

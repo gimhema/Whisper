@@ -3,7 +3,6 @@ package common
 import (
 	"fmt"
 	"net"
-	"syscall"
 )
 
 type TCPServer struct {
@@ -45,17 +44,6 @@ func (s *TCPServer) Run() error {
 }
 
 func (s *TCPServer) handleConnection(conn net.Conn) {
-	defer conn.Close()
-
-	rawConn, err := conn.(*net.TCPConn).File()
-	if err != nil {
-		fmt.Println("Failed to get raw connection:", err)
-		return
-	}
-	defer rawConn.Close()
-
-	syscall.SetNonblock(int(rawConn.Fd()), true)
-
 	buf := make([]byte, 1024)
 	for {
 		n, err := conn.Read(buf)
@@ -64,6 +52,7 @@ func (s *TCPServer) handleConnection(conn net.Conn) {
 				continue
 			}
 			fmt.Println("Read error:", err)
+			conn.Close()  // 여기서 에러 났을 때 닫기
 			return
 		}
 		if n > 0 {
@@ -74,6 +63,8 @@ func (s *TCPServer) handleConnection(conn net.Conn) {
 		}
 	}
 }
+
+
 
 
 func isTemporary(err error) bool {
