@@ -8,6 +8,7 @@ import (
 type Node struct {
 	conn net.Conn
 	id   string
+	subscribers map[string]func(string)
 }
 
 
@@ -29,7 +30,12 @@ func (n *Node) Publish(topic string, message string) error {
 	return err
 }
 
-func (n *Node) Subscribe(topic string) error {
+func (n *Node) Subscribe(topic string, handler func(string)) error {
+	if n.subscribers == nil {
+		n.subscribers = make(map[string]func(string))
+	}
+	n.subscribers[topic] = handler
+
 	payload := fmt.Sprintf("SUB %s\n", topic)
 	_, err := n.conn.Write([]byte(payload))
 	return err
@@ -44,7 +50,18 @@ func (n *Node) Listen() {
 			break
 		}
 		if nRead > 0 {
-			fmt.Println("Received from broker:", string(buf[:nRead]))
+			msg := string(buf[:nRead])
+			fmt.Println("Received from broker:", msg)
+
+			var command, topic, body string
+			fmt.Sscanf(msg, "%s %s %[^\n]", &command, &topic, &body)
+			if command == "MSG" {
+				if handler, ok := n.subscribers[topic]; ok {
+					handler(body)
+				} else {
+					fmt.Println("No handler for topic:", topic)
+				}
+			}
 		}
 	}
 }
