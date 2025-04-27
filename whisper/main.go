@@ -6,7 +6,7 @@ import (
 
 	"whisper/pkg/common"
 	"whisper/pkg/broker"
-//	"whisper/pkg/node"
+	"whisper/pkg/node"
 )
 
 func main() {
@@ -30,8 +30,14 @@ func main() {
 			mode = common.NODE
 			fmt.Println("Node mode")
 			
-			// node := node.CreateNode()
-			// node.Run()
+			node, err := node.ConnectToBroker("localhost:8080")
+			if err != nil {
+				panic(err)
+			}
+
+			go node.Listen()
+
+			select {} 
 
 		} else {
 			fmt.Println("Unsupported mode")
