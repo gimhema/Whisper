@@ -6,8 +6,9 @@ mini pub - sub framework
 ### 1. Broker mode
 
 #### 1.1 Execution
+./whisper broker <CONNECT_INFO>
 ```
-./whisper broker
+./whisper broker 127.0.0.1:8080
 ```
 
 ### 2. Node mode
