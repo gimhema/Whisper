@@ -18,12 +18,20 @@ mini pub - sub framework
 ```
 
 #### 2.2 Subscribe Message
-```
 
+SUB <MESSAGE_NAME>
+
+```
+./whisper node
+SUB chat
 ```
 
 
 #### 2.3 Publish Message
-```
 
+PUB <MESSAGE_NAME> <MESSAGE_CONTENT>
+
+```
+./whisper node
+PUB chat hello
 ```
