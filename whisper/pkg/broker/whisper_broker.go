@@ -2,10 +2,10 @@ package broker
 
 import (
 	"fmt"
-	"whisper/pkg/common"
-	"os"
 	"net"
+	"os"
 	"strings"
+	"whisper/pkg/common"
 )
 
 type Subscriber struct {
@@ -14,20 +14,20 @@ type Subscriber struct {
 }
 
 type Broker struct {
-	tcpConn common.TCPServer
+	tcpConn       common.TCPServer
 	subscriptions map[string]map[string]*Subscriber
-	subscribers map[string]*Subscriber
+	subscribers   map[string]*Subscriber
 }
 
-func CreateBroker() *Broker {
-	_tcpConn := common.NewTCPServer(":8080")
+func CreateBroker(connInfo string) *Broker {
+	// _tcpConn := common.NewTCPServer(":8080")
+	_tcpConn := common.NewTCPServer(connInfo)
 	return &Broker{
 		tcpConn:       *_tcpConn,
 		subscriptions: make(map[string]map[string]*Subscriber),
 		subscribers:   make(map[string]*Subscriber),
 	}
 }
-
 
 func (broker *Broker) Run() {
 	fmt.Println("Run Message Broker")
@@ -96,8 +96,7 @@ func (broker *Broker) publish(topic, message string) {
 		_, err := sub.conn.Write([]byte("MSG " + topic + " " + message + "\n"))
 		if err != nil {
 			fmt.Println("Failed to send to subscriber:", id, "error:", err)
-			delete(subs, id) 
+			delete(subs, id)
 		}
 	}
-	}
-
+}
