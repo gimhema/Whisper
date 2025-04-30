@@ -14,8 +14,9 @@ mini pub - sub framework
 ### 2. Node mode
 
 #### 2.1 Execution
+./whisper node <CONNECT_INFO>
 ```
-./whisper node
+./whisper node 127.0.0.1:8080
 ```
 
 #### 2.2 Subscribe Message
