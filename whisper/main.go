@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"whisper/pkg/common"
 	"whisper/pkg/broker"
+	"whisper/pkg/common"
 	"whisper/pkg/node"
 )
 
@@ -20,16 +20,17 @@ func main() {
 		fmt.Println("Arguments:", val)
 
 		if val == "broker" {
+			connInfo := args[2]
 			mode = common.BROKER
 			fmt.Println("Broker mode")
 
-			broker := broker.CreateBroker()
+			broker := broker.CreateBroker(connInfo)
 			broker.Run()
-			
+
 		} else if val == "node" {
 			mode = common.NODE
 			fmt.Println("Node mode")
-			
+
 			node, err := node.ConnectToBroker("localhost:8080")
 			if err != nil {
 				panic(err)
@@ -41,7 +42,7 @@ func main() {
 
 			node.HandleUserInput()
 
-			select {} 
+			select {}
 
 		} else {
 			fmt.Println("Unsupported mode")
