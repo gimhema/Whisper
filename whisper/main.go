@@ -28,10 +28,13 @@ func main() {
 			broker.Run()
 
 		} else if val == "node" {
+			connInfo := args[2]
+
 			mode = common.NODE
 			fmt.Println("Node mode")
 
-			node, err := node.ConnectToBroker("localhost:8080")
+			// node, err := node.ConnectToBroker("localhost:8080")
+			node, err := node.ConnectToBroker(connInfo)
 			if err != nil {
 				panic(err)
 			}
