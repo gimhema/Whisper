@@ -106,15 +106,21 @@ func (n *Node) Listen() {
 		}
 		if nRead > 0 {
 			msg := string(buf[:nRead])
-			fmt.Println("Received from broker:", msg)
-
-			var command, topic, body string
-			fmt.Sscanf(msg, "%s %s %[^\n]", &command, &topic, &body)
-			if command == "MSG" {
-				if handler, ok := n.subscribers[topic]; ok {
-					handler(body)
-				} else {
-					fmt.Println("No handler registered for topic:", topic)
+			lines := strings.Split(strings.TrimSpace(msg), "\n")
+			for _, line := range lines {
+				parts := strings.SplitN(line, " ", 3)
+				if len(parts) < 3 {
+					fmt.Println("Malformed message:", line)
+					continue
+				}
+				command, topic, body := parts[0], parts[1], parts[2]
+			
+				if command == "MSG" {
+					if handler, ok := n.subscribers[topic]; ok {
+						handler(body)
+					} else {
+						fmt.Println("No handler registered for topic:", topic)
+					}
 				}
 			}
 		}
