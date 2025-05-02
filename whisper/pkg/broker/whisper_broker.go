@@ -20,7 +20,6 @@ type Broker struct {
 }
 
 func CreateBroker(connInfo string) *Broker {
-	// _tcpConn := common.NewTCPServer(":8080")
 	_tcpConn := common.NewTCPServer(connInfo)
 	return &Broker{
 		tcpConn:       *_tcpConn,
