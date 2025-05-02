@@ -1,22 +1,21 @@
 package common
 
 import (
+	"bufio"
 	"fmt"
 	"net"
-	"bufio"
 	"strings"
 )
 
 type TCPServer struct {
-	Address      string
-	listener     net.Listener
+	Address        string
+	listener       net.Listener
 	messageHandler func(conn net.Conn, data []byte)
 }
 
 func (s *TCPServer) SetMessageHandler(handler func(conn net.Conn, data []byte)) {
 	s.messageHandler = handler
 }
-
 
 func NewTCPServer(address string) *TCPServer {
 	return &TCPServer{
@@ -46,6 +45,9 @@ func (s *TCPServer) Run() error {
 }
 
 func (s *TCPServer) handleConnection(conn net.Conn) {
+
+	fmt.Println("Start handle connection,", conn.RemoteAddr().String())
+
 	reader := bufio.NewReader(conn)
 	for {
 		line, err := reader.ReadString('\n') // 한 줄 읽기
@@ -66,14 +68,9 @@ func (s *TCPServer) handleConnection(conn net.Conn) {
 	}
 }
 
-
-
-
 func isTemporary(err error) bool {
 	if nerr, ok := err.(net.Error); ok && nerr.Temporary() {
 		return true
 	}
 	return false
 }
-
-
