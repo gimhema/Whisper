@@ -115,6 +115,8 @@ func (n *Node) Listen() {
 				}
 				command, topic, body := parts[0], parts[1], parts[2]
 			
+				fmt.Println("Raw Message : ", body)
+
 				if command == "MSG" {
 					if handler, ok := n.subscribers[topic]; ok {
 						handler(body)
