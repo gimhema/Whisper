@@ -1,6 +1,3 @@
-// Cargo.toml 파일에 다음 의존성을 추가해야 합니다:
-// [dependencies]
-// tokio = { version = "1", features = ["full"] }
 
 use tokio::net::{TcpListener, TcpStream};
 use tokio::io::{AsyncReadExt, AsyncWriteExt, BufReader, AsyncBufReadExt};
@@ -10,19 +7,12 @@ use tokio::sync::Mutex; // 비동기 컨텍스트를 위한 tokio의 Mutex 사�
 use std::fmt;
 use std::error::Error;
 
-// 브로커 작업에서 발생할 수 있는 오류를 위한 사용자 정의 열거형
-// MutexLockError는 tokio::sync::Mutex가 패닉 시 복구할 수 없기 때문에
-// 이론적으로는 발생하지 않거나, 발생 시 복구 불가능한 에러로 간주됩니다.
-// 하지만 다른 I/O 에러 등은 여전히 발생할 수 있으므로 Error 타입을 유지합니다.
 #[derive(Debug)]
 enum BrokerError {
     Io(std::io::Error),
     InvalidMessageFormat,
     MissingMessage,
     UnknownCommand,
-    // tokio::sync::Mutex는 락 획득 실패 시 패닉을 일으키므로 이 에러는 직접적으로 발생하지 않습니다.
-    // 하지만 다른 잠금 관련 로직(예: RwLock 등)에서 발생할 수 있으므로 남겨둘 수도 있습니다.
-    // 현재 코드에서는 사실상 사용되지 않습니다.
     MutexLockError,
 }
 
@@ -46,15 +36,6 @@ impl From<std::io::Error> for BrokerError {
         BrokerError::Io(err)
     }
 }
-
-// `tokio::sync::AcquireError`에 대한 `From` 구현은 더 이상 필요하지 않습니다.
-// 왜냐하면 `tokio::sync::Mutex::lock().await`가 `Result`를 반환하지 않기 때문입니다.
-// 만약 `std::sync::Mutex`를 사용한다면 `std::sync::PoisonError`에 대한 From 구현이 필요합니다.
-
-
-// 구독자(Subscriber)를 나타내는 구조체
-// The writer half of the TcpStream is protected by a Mutex to allow safe concurrent writes
-// if multiple publishers or other parts of the system need to write to the same subscriber.
 
 struct Subscriber {
     id: String,
