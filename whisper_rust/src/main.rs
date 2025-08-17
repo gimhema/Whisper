@@ -1,42 +1,62 @@
+// src/main.rs
+
 use std::env;
 use std::process;
-use std::thread;
 
-mod common;
 mod broker;
+mod common;
 mod node;
 
-fn main() {
+use crate::broker::whisper_broker::Broker; // re-export 덕분에 짧게
+use crate::node::whisper_node::Node; // re-export 덕분에 짧게
+use crate::common::whisper_type_common::WhisperMode;
+
+#[tokio::main]
+async fn main() {
     let args: Vec<String> = env::args().collect();
 
-    let mut mode = common::Mode::Default;
+    if args.len() < 2 {
+        eprintln!(
+            "Usage:\n  {} broker <addr>\n  {} node <addr>\n\nExamples:\n  {} broker 127.0.0.1:8080\n  {} node 127.0.0.1:8080",
+            args[0], args[0], args[0], args[0]
+        );
+        process::exit(1);
+    }
 
-    if args.len() > 1 {
-        let val = &args[1];
-        println!("Arguments: {}", val);
+    let subcmd = args[1].as_str();
+    let addr = args.get(2).map(String::as_str).unwrap_or_default();
 
-        if val == "broker" {
-            if args.len() < 3 {
+    let mut mode = WhisperMode::DEFAULT;
+
+    match subcmd {
+        "broker" => {
+            if addr.is_empty() {
                 eprintln!("Broker mode requires address argument (e.g., 127.0.0.1:8080)");
                 process::exit(1);
             }
-            let conn_info = &args[2];
-            mode = common::Mode::Broker;
-            println!("Broker mode");
+            mode = WhisperMode::BROKER;
+            println!("Broker mode (addr = {})", addr);
 
-            let broker = broker::create_broker(conn_info);
-            broker.run();
+            match Broker::create_broker(addr).await {
+                Ok(broker) => {
+                    broker.run().await; // loop, 반환 안 됨
+                }
+                Err(e) => {
+                    eprintln!("Failed to start broker: {}", e);
+                    process::exit(1);
+                }
+            }
+        }
 
-        } else if val == "node" {
-            if args.len() < 3 {
+        "node" => {
+            if addr.is_empty() {
                 eprintln!("Node mode requires address argument (e.g., 127.0.0.1:8080)");
                 process::exit(1);
             }
-            let conn_info = &args[2];
-            mode = common::Mode::Node;
-            println!("Node mode");
+            mode = WhisperMode::NODE;
+            println!("Node mode (broker = {})", addr);
 
-            let node = match node::Node::connect_to_broker(conn_info) {
+            let node = match Node::connect_to_broker(addr) {
                 Ok(n) => n,
                 Err(e) => {
                     eprintln!("Failed to connect to broker: {}", e);
@@ -44,25 +64,26 @@ fn main() {
                 }
             };
 
-            node.setup_handler();
+            // 필요시 기본 핸들러/구독
+            // node.register_handler("chat", |msg| println!("[chat] {}", msg));
+            // let _ = node.subscribe("chat");
 
-            let node_clone = node.clone();
-            thread::spawn(move || {
-                node_clone.listen();
-            });
-
+            node.listen();
             node.handle_user_input();
 
-            // 프로그램 종료 방지
+            // Tokio 런타임에서 그냥 슬립하며 생존
+            use tokio::time::{sleep, Duration};
             loop {
-                thread::park();
+                sleep(Duration::from_secs(3600)).await;
             }
-        } else {
-            println!("Unsupported mode");
         }
-    } else {
-        println!("No arguments passed.");
+
+        _ => {
+            eprintln!("Unsupported mode: {}", subcmd);
+            process::exit(1);
+        }
     }
 
-    println!("Selected mode: {:?}", mode);
+    // 보통 여기 도달하지 않음
+    println!("Selected mode: {:?}", mode as i32);
 }

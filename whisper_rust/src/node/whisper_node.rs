@@ -6,14 +6,14 @@ use std::thread;
 
 type Handler = Box<dyn Fn(String) + Send + Sync>;
 
-struct Node {
+pub struct Node {
     conn: Arc<Mutex<TcpStream>>,
     id: String,
     subscribers: Arc<Mutex<HashMap<String, Handler>>>,
 }
 
 impl Node {
-    fn connect_to_broker(address: &str) -> io::Result<Self> {
+    pub fn connect_to_broker(address: &str) -> io::Result<Self> {
         let conn = TcpStream::connect(address)?;
         let id = conn.local_addr()?.to_string();
         Ok(Node {
@@ -23,12 +23,12 @@ impl Node {
         })
     }
 
-    fn subscribe(&self, topic: &str) -> io::Result<()> {
+    pub fn subscribe(&self, topic: &str) -> io::Result<()> {
         let payload = format!("SUB {}\n", topic);
         self.conn.lock().unwrap().write_all(payload.as_bytes())
     }
 
-    fn register_handler<F>(&self, topic: &str, handler: F)
+    pub fn register_handler<F>(&self, topic: &str, handler: F)
     where
         F: Fn(String) + Send + Sync + 'static,
     {
@@ -38,12 +38,12 @@ impl Node {
             .insert(topic.to_string(), Box::new(handler));
     }
 
-    fn publish(&self, topic: &str, message: &str) -> io::Result<()> {
+    pub fn publish(&self, topic: &str, message: &str) -> io::Result<()> {
         let payload = format!("PUB {} {}\n", topic, message);
         self.conn.lock().unwrap().write_all(payload.as_bytes())
     }
 
-    fn handle_user_input(&self) {
+    pub fn handle_user_input(&self) {
         let node = self.clone();
         thread::spawn(move || {
             let stdin = io::stdin();
@@ -87,7 +87,7 @@ impl Node {
         });
     }
 
-    fn listen(&self) {
+    pub fn listen(&self) {
         let conn = self.conn.lock().unwrap().try_clone().unwrap();
         let subscribers = Arc::clone(&self.subscribers);
 
@@ -135,25 +135,25 @@ impl Clone for Node {
     }
 }
 
-fn main() -> io::Result<()> {
-    let node = Node::connect_to_broker("127.0.0.1:8080")?;
+// fn main() -> io::Result<()> {
+//     let node = Node::connect_to_broker("127.0.0.1:8080")?;
 
-    // 예시: 토픽별 핸들러 등록
-    node.register_handler("chat", |msg| {
-        println!("[Chat] Received: {}", msg);
-    });
+//     // 예시: 토픽별 핸들러 등록
+//     node.register_handler("chat", |msg| {
+//         println!("[Chat] Received: {}", msg);
+//     });
 
-    // 브로커에 구독 요청
-    node.subscribe("chat")?;
+//     // 브로커에 구독 요청
+//     node.subscribe("chat")?;
 
-    // 서버 수신 대기
-    node.listen();
+//     // 서버 수신 대기
+//     node.listen();
 
-    // 사용자 입력 처리
-    node.handle_user_input();
+//     // 사용자 입력 처리
+//     node.handle_user_input();
 
-    // 프로그램 종료 방지
-    loop {
-        thread::park();
-    }
-}
+//     // 프로그램 종료 방지
+//     loop {
+//         thread::park();
+//     }
+// }

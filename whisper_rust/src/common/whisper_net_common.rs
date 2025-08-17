@@ -70,21 +70,21 @@ impl TCPServer {
     }
 }
 
-fn main() -> std::io::Result<()> {
-    let mut server = TCPServer::new("127.0.0.1:8080");
+// fn main() -> std::io::Result<()> {
+//     let mut server = TCPServer::new("127.0.0.1:8080");
 
-    server.set_message_handler(|mut conn, data| {
-        println!(
-            "Received from {}: {:?}",
-            conn.peer_addr().unwrap(),
-            String::from_utf8_lossy(&data)
-        );
-        // Echo back
-        use std::io::Write;
-        if let Err(e) = writeln!(conn, "{}", String::from_utf8_lossy(&data)) {
-            eprintln!("Write error: {}", e);
-        }
-    });
+//     server.set_message_handler(|mut conn, data| {
+//         println!(
+//             "Received from {}: {:?}",
+//             conn.peer_addr().unwrap(),
+//             String::from_utf8_lossy(&data)
+//         );
+//         // Echo back
+//         use std::io::Write;
+//         if let Err(e) = writeln!(conn, "{}", String::from_utf8_lossy(&data)) {
+//             eprintln!("Write error: {}", e);
+//         }
+//     });
 
-    server.run()
-}
+//     server.run()
+// }

@@ -8,7 +8,7 @@ use std::fmt;
 use std::error::Error;
 
 #[derive(Debug)]
-enum BrokerError {
+pub enum BrokerError {
     Io(std::io::Error),
     InvalidMessageFormat,
     MissingMessage,
@@ -90,7 +90,7 @@ impl Broker {
     }
 
     /// 단일 클라이언트 연결을 처리하는 함수입니다.
-    async fn handle_client(
+    pub async fn handle_client(
         stream: TcpStream,
         subscriptions: Arc<Mutex<HashMap<String, HashMap<String, Arc<Subscriber>>>>>,
         all_subscribers: Arc<Mutex<HashMap<String, Arc<Subscriber>>>>,
@@ -172,7 +172,7 @@ impl Broker {
     }
 
     /// 실제 구독 로직을 수행하는 헬퍼 함수입니다.
-    async fn perform_subscription(
+    pub async fn perform_subscription(
         subscriber_arc: Arc<Subscriber>,
         topic: String,
         subscriptions: Arc<Mutex<HashMap<String, HashMap<String, Arc<Subscriber>>>>>,
@@ -189,7 +189,7 @@ impl Broker {
     }
 
     /// 주어진 토픽에 메시지를 발행합니다.
-    async fn publish(
+    pub async fn publish(
         topic: String,
         message: String,
         subscriptions: Arc<Mutex<HashMap<String, HashMap<String, Arc<Subscriber>>>>>,
@@ -230,7 +230,7 @@ impl Broker {
     }
 
     /// 연결이 끊어진 구독자를 정리하는 헬퍼 함수입니다.
-    async fn cleanup_subscriber(
+    pub async fn cleanup_subscriber(
         client_id: String,
         subscriptions: Arc<Mutex<HashMap<String, HashMap<String, Arc<Subscriber>>>>>,
         all_subscribers: Arc<Mutex<HashMap<String, Arc<Subscriber>>>>,
@@ -250,10 +250,10 @@ impl Broker {
     }
 }
 
-// 브로커를 실행하기 위한 메인 함수
-#[tokio::main] // tokio 런타임을 사용하여 비동기 메인 함수를 실행합니다.
-async fn main() -> Result<(), BrokerError> {
-    let broker = Broker::create_broker("127.0.0.1:8080").await?;
-    broker.run().await;
-    Ok(())
-}
+// // 브로커를 실행하기 위한 메인 함수
+// #[tokio::main] // tokio 런타임을 사용하여 비동기 메인 함수를 실행합니다.
+// async fn main() -> Result<(), BrokerError> {
+//     let broker = Broker::create_broker("127.0.0.1:8080").await?;
+//     broker.run().await;
+//     Ok(())
+// }
